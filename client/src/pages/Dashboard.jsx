@@ -115,13 +115,22 @@ const Dashboard = () => {
             updatedFlash[oldStock.symbol] = priceDiff > 0 ? 'up' : 'down';
           }
 
-          // Build rolling historical quote baseline dynamically (keep last 7 items)
+          // Build rolling historical quote baseline dynamically (keep last 25 items for smooth zooming)
           let newHistory = oldStock.history || [];
           if (newHistory.length === 0) {
-            // Seed history if empty
-            newHistory = [ticked.price - 4, ticked.price - 2, ticked.price + 1, ticked.price];
+            // Seed history with 15 realistic historical data points fluctuating around the current price
+            const basePrice = ticked.price;
+            newHistory = Array.from({ length: 15 }, (_, i) => {
+              const stepsFromEnd = 14 - i;
+              const fluctuation = (Math.sin(i * 0.8) * 1.2) + (Math.cos(i * 0.3) * 0.8) + (Math.random() * 0.4 - 0.2);
+              return +(basePrice - (stepsFromEnd * 0.3) + fluctuation).toFixed(2);
+            });
+            newHistory[14] = basePrice;
           } else {
-            newHistory = [...newHistory.slice(1), ticked.price];
+            newHistory = [...newHistory, ticked.price];
+            if (newHistory.length > 25) {
+              newHistory = newHistory.slice(newHistory.length - 25);
+            }
           }
 
           return {
@@ -199,9 +208,31 @@ const Dashboard = () => {
   }
 
   // Pre-process recharts historical arrays
-  const selectedHistory = selectedStock?.history || [100, 102, 98, 101, 105, 102, 100];
-  const chartData = selectedHistory.map((val, idx) => ({
-    time: `T-${selectedHistory.length - 1 - idx}`,
+  const selectedHistory = selectedStock?.history || [
+    (selectedStock?.price || 250) - 4.5,
+    (selectedStock?.price || 250) - 3.2,
+    (selectedStock?.price || 250) - 4.0,
+    (selectedStock?.price || 250) - 2.5,
+    (selectedStock?.price || 250) - 3.0,
+    (selectedStock?.price || 250) - 1.2,
+    (selectedStock?.price || 250) - 1.8,
+    (selectedStock?.price || 250) - 0.5,
+    (selectedStock?.price || 250) - 0.9,
+    (selectedStock?.price || 250) + 0.8,
+    (selectedStock?.price || 250) + 0.2,
+    (selectedStock?.price || 250) + 1.5,
+    (selectedStock?.price || 250) + 0.9,
+    (selectedStock?.price || 250) + 2.1,
+    selectedStock?.price || 259
+  ];
+
+  // Slice history dynamically based on zoomLevel to achieve real horizontal zoom
+  const totalPoints = selectedHistory.length;
+  const visiblePointsCount = Math.max(4, Math.round(totalPoints / zoomLevel));
+  const zoomedHistory = selectedHistory.slice(totalPoints - visiblePointsCount);
+
+  const chartData = zoomedHistory.map((val, idx) => ({
+    time: `T-${zoomedHistory.length - 1 - idx}`,
     price: val
   }));
 
@@ -492,24 +523,33 @@ const Dashboard = () => {
                   </button>
                 </div>
 
-                <div className="flex items-center space-x-2.5">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">Zoom</span>
-                  <button
-                    onClick={() => setZoomLevel(Math.min(3, zoomLevel + 0.5))}
-                    className="p-1 rounded bg-slate-200/50 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-cyberBlue cursor-pointer"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => setZoomLevel(Math.max(1, zoomLevel - 0.5))}
-                    className="p-1 rounded bg-slate-200/50 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-cyberBlue cursor-pointer"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM4 10h12" />
-                    </svg>
-                  </button>
+                <div className="flex items-center space-x-3 bg-slate-200/20 dark:bg-white/5 border border-slate-300/25 dark:border-white/5 px-3 py-1 rounded-xl">
+                  <span className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Zoom</span>
+                  <div className="flex items-center space-x-1.5">
+                    <button
+                      onClick={() => setZoomLevel(Math.min(3, zoomLevel + 0.5))}
+                      className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 text-slate-600 dark:text-slate-300 hover:text-cyberBlue dark:hover:text-cyberTeal cursor-pointer active:scale-95 transition-all flex items-center justify-center"
+                      title="Zoom In"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        <line x1="11" y1="8" x2="11" y2="14" />
+                        <line x1="8" y1="11" x2="14" y2="11" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => setZoomLevel(Math.max(1, zoomLevel - 0.5))}
+                      className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 text-slate-600 dark:text-slate-300 hover:text-cyberBlue dark:hover:text-cyberTeal cursor-pointer active:scale-95 transition-all flex items-center justify-center"
+                      title="Zoom Out"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        <line x1="8" y1="11" x2="14" y2="11" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -529,7 +569,6 @@ const Dashboard = () => {
                       <YAxis
                         domain={['auto', 'auto']}
                         tick={{ fontSize: 9, fill: '#64748b' }}
-                        scale={zoomLevel > 1 ? "log" : "auto"}
                       />
                       <Tooltip
                         contentStyle={{
