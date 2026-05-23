@@ -165,10 +165,12 @@ const Dashboard = () => {
           if (newHistory.length === 0) {
             // Seed history with 15 realistic historical data points fluctuating around the current price
             const basePrice = ticked.price;
+            const isStockUp = ticked.change >= 0;
             newHistory = Array.from({ length: 15 }, (_, i) => {
               const stepsFromEnd = 14 - i;
+              const trendDir = isStockUp ? 1 : -1;
               const fluctuation = (Math.sin(i * 0.8) * 1.2) + (Math.cos(i * 0.3) * 0.8) + (Math.random() * 0.4 - 0.2);
-              return +(basePrice - (stepsFromEnd * 0.3) + fluctuation).toFixed(2);
+              return +(basePrice - (trendDir * stepsFromEnd * 0.3) + fluctuation).toFixed(2);
             });
             newHistory[14] = basePrice;
           } else {
@@ -253,23 +255,14 @@ const Dashboard = () => {
   }
 
   // Pre-process recharts historical arrays
-  const selectedHistory = selectedStock?.history || [
-    (selectedStock?.price || 250) - 4.5,
-    (selectedStock?.price || 250) - 3.2,
-    (selectedStock?.price || 250) - 4.0,
-    (selectedStock?.price || 250) - 2.5,
-    (selectedStock?.price || 250) - 3.0,
-    (selectedStock?.price || 250) - 1.2,
-    (selectedStock?.price || 250) - 1.8,
-    (selectedStock?.price || 250) - 0.5,
-    (selectedStock?.price || 250) - 0.9,
-    (selectedStock?.price || 250) + 0.8,
-    (selectedStock?.price || 250) + 0.2,
-    (selectedStock?.price || 250) + 1.5,
-    (selectedStock?.price || 250) + 0.9,
-    (selectedStock?.price || 250) + 2.1,
-    selectedStock?.price || 259
-  ];
+  const isSelectedStockUp = (selectedStock?.change || 0) >= 0;
+  const selectedHistory = selectedStock?.history || Array.from({ length: 15 }, (_, i) => {
+    const base = selectedStock?.price || 250;
+    const steps = 14 - i;
+    const dir = isSelectedStockUp ? 1 : -1;
+    const fluctuation = Math.sin(i * 0.8) * 1.0 + (Math.random() * 0.4 - 0.2);
+    return +(base - (dir * steps * 0.35) + fluctuation).toFixed(2);
+  });
 
   // Slice history dynamically based on zoomLevel to achieve real horizontal zoom
   const totalPoints = selectedHistory.length;
@@ -277,7 +270,8 @@ const Dashboard = () => {
   const zoomedHistory = selectedHistory.slice(totalPoints - visiblePointsCount);
 
   const chartData = zoomedHistory.map((val, idx) => {
-    const prevVal = idx > 0 ? zoomedHistory[idx - 1] : val * 0.99;
+    const isDashboardStockUp = (selectedStock?.change || 0) >= 0;
+    const prevVal = idx > 0 ? zoomedHistory[idx - 1] : val * (isDashboardStockUp ? 0.99 : 1.01);
     const open = prevVal;
     const close = val;
     // Generate high/low that bounds open/close realistically
@@ -735,7 +729,7 @@ const Dashboard = () => {
                       {/* Technical Indicator Wavy teal Line (EMA/SMA) */}
                       <Line type="monotone" dataKey="ma" stroke="#22D3EE" strokeWidth={1.5} dot={false} activeDot={false} opacity={0.8} />
                       {/* Candlesticks body and wicks drawn via Custom Shape */}
-                      <Bar dataKey="price" shape={<CandlestickBar />} />
+                      <Bar dataKey="price" shape={(props) => <CandlestickBar {...props} />} />
                     </ComposedChart>
                   )}
                 </ResponsiveContainer>
