@@ -1,16 +1,12 @@
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-# Dependencies and build outputs
+# Dependencies
 node_modules/
-dist/
-dist-ssr/
 
 # Environments (CRITICAL SECURITY)
 .env
@@ -20,13 +16,12 @@ dist-ssr/
 .env.production.local
 *.env
 
+# Local database storage / SQLite
+*.db
+*.sqlite
+data/db/
+
 # Editor & System Files
 .vscode/
-!.vscode/extensions.json
 .idea/
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
