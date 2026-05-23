@@ -13,10 +13,55 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  ComposedChart,
+  Cell
 } from 'recharts';
 import { AuthContext } from '../context/AuthContext';
 import API from '../services/api';
+
+// Custom SVG Renderer for Recharts Candlestick body and wicks
+const CandlestickBar = (props) => {
+  const { x, y, width, height, payload, yAxis } = props;
+  if (!payload || !yAxis) return null;
+  const { open, close, high, low } = payload;
+  const isUp = close >= open;
+  
+  const centerX = x + width / 2;
+  const wickTop = yAxis.scale(high);
+  const wickBottom = yAxis.scale(low);
+  const bodyTop = yAxis.scale(Math.max(open, close));
+  const bodyBottom = yAxis.scale(Math.min(open, close));
+  const bodyHeight = Math.max(2, Math.abs(bodyTop - bodyBottom));
+  
+  const candleColor = isUp ? '#10B981' : '#EF4444'; // Green vs Red
+  
+  return (
+    <g>
+      {/* High-Low Wick Line */}
+      <line
+        x1={centerX}
+        y1={wickTop}
+        x2={centerX}
+        y2={wickBottom}
+        stroke={candleColor}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+      />
+      {/* Open-Close Body Rectangle */}
+      <rect
+        x={x}
+        y={bodyTop}
+        width={width}
+        height={bodyHeight}
+        fill={candleColor}
+        stroke={candleColor}
+        strokeWidth={1}
+        rx={1}
+      />
+    </g>
+  );
+};
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
@@ -231,10 +276,39 @@ const Dashboard = () => {
   const visiblePointsCount = Math.max(4, Math.round(totalPoints / zoomLevel));
   const zoomedHistory = selectedHistory.slice(totalPoints - visiblePointsCount);
 
-  const chartData = zoomedHistory.map((val, idx) => ({
-    time: `T-${zoomedHistory.length - 1 - idx}`,
-    price: val
-  }));
+  const chartData = zoomedHistory.map((val, idx) => {
+    const prevVal = idx > 0 ? zoomedHistory[idx - 1] : val * 0.99;
+    const open = prevVal;
+    const close = val;
+    // Generate high/low that bounds open/close realistically
+    const high = Math.max(open, close) + Math.max(0.1, ((Math.sin(idx * 0.5) + 1) * 0.4) + Math.random() * 0.3);
+    const low = Math.min(open, close) - Math.max(0.1, ((Math.cos(idx * 0.5) + 1) * 0.4) + Math.random() * 0.3);
+    const isUp = close >= open;
+
+    // Calculate a 5-period simple moving average (SMA)
+    let sum = 0;
+    let count = 0;
+    for (let i = Math.max(0, idx - 4); i <= idx; i++) {
+      sum += zoomedHistory[i];
+      count++;
+    }
+    const ma = +(sum / count).toFixed(2);
+
+    // Mock volume proportional to the price volatility
+    const volume = Math.round(150 + Math.abs(high - low) * 200 + Math.random() * 100);
+
+    return {
+      time: `T-${zoomedHistory.length - 1 - idx}`,
+      open,
+      close,
+      high,
+      low,
+      price: val,
+      ma,
+      volume,
+      isUp
+    };
+  });
 
   const chartColor = (selectedStock?.change || 0) >= 0 ? '#10B981' : '#EF4444';
 
@@ -521,6 +595,16 @@ const Dashboard = () => {
                   >
                     Bar
                   </button>
+                  <button
+                    onClick={() => setChartType('candle')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      chartType === 'candle'
+                        ? 'bg-cyberBlue text-white shadow'
+                        : 'bg-slate-200/50 dark:bg-white/5 text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                    }`}
+                  >
+                    Candle
+                  </button>
                 </div>
 
                 <div className="flex items-center space-x-3 bg-slate-200/20 dark:bg-white/5 border border-slate-300/25 dark:border-white/5 px-3 py-1 rounded-xl">
@@ -611,7 +695,7 @@ const Dashboard = () => {
                         activeDot={{ r: 6 }}
                       />
                     </LineChart>
-                  ) : (
+                  ) : chartType === 'bar' ? (
                     <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.07} />
                       <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#64748b' }} />
@@ -627,6 +711,32 @@ const Dashboard = () => {
                       />
                       <Bar dataKey="price" fill={chartColor} radius={[4, 4, 0, 0]} />
                     </BarChart>
+                  ) : (
+                    <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.07} />
+                      <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#64748b' }} />
+                      <YAxis domain={['auto', 'auto']} tick={{ fontSize: 9, fill: '#64748b' }} />
+                      <YAxis yAxisId="volume" hide domain={[0, 1000]} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(21, 29, 48, 0.9)',
+                          border: '1px solid rgba(255, 255, 255, 0.05)',
+                          borderRadius: '12px',
+                          color: '#fff',
+                          fontSize: '11px'
+                        }}
+                      />
+                      {/* Translucent Volume Bars at Bottom */}
+                      <Bar yAxisId="volume" dataKey="volume" fillOpacity={0.15}>
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.isUp ? '#10B981' : '#EF4444'} />
+                        ))}
+                      </Bar>
+                      {/* Technical Indicator Wavy teal Line (EMA/SMA) */}
+                      <Line type="monotone" dataKey="ma" stroke="#22D3EE" strokeWidth={1.5} dot={false} activeDot={false} opacity={0.8} />
+                      {/* Candlesticks body and wicks drawn via Custom Shape */}
+                      <Bar dataKey="price" shape={<CandlestickBar />} />
+                    </ComposedChart>
                   )}
                 </ResponsiveContainer>
               </div>
