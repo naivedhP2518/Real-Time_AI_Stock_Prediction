@@ -10,6 +10,7 @@ const Profile = () => {
   
   // Custom Interactive States
   const [copiedField, setCopiedField] = useState(null);
+  const [showDebugConsole, setShowDebugConsole] = useState(false);
   const [showKeyGenerator, setShowKeyGenerator] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
   const [apiKeys, setApiKeys] = useState([
@@ -497,58 +498,88 @@ const Profile = () => {
         {/* RIGHT BLOCK: JWT Token Decryption & Security Preferences (col-span-5) */}
         <div className="lg:col-span-5 space-y-8">
           
-          {/* JWT DECRYPTION CARD */}
+          {/* SUBSCRIPTION & RESOURCE LIMITS */}
           <div className="glass-panel rounded-2xl p-6 sm:p-8 border border-slate-200/50 dark:border-white/5 relative overflow-hidden transition-all duration-300">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-cyberTeal/5 to-transparent rounded-bl-full pointer-events-none"></div>
             
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide uppercase transition-colors duration-300">
-                Parsed Token Payload
+                Subscription & API Ingestion
               </h3>
-              
-              {claims && (
-                <button
-                  onClick={() => handleCopy(JSON.stringify(claims, null, 2), 'claims')}
-                  className="text-[10px] font-bold text-cyberBlue dark:text-cyberTeal hover:underline cursor-pointer flex items-center gap-1"
-                >
-                  {copiedField === 'claims' ? 'Copied Payload!' : 'Copy JSON'}
-                </button>
-              )}
+              <span className="text-[10px] font-black text-cyberBlue dark:text-cyberTeal bg-cyberBlue/10 dark:bg-cyberTeal/10 border border-cyberBlue/20 dark:border-cyberTeal/20 px-2.5 py-0.5 rounded-full uppercase">
+                Premium Pro
+              </span>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-500 mb-4 transition-colors duration-300">
-              Real-time deserialized claim attributes.
+            <p className="text-xs text-slate-600 dark:text-slate-500 mb-6 transition-colors duration-300">
+              Live ingest resource utilization for predictive ML modules.
             </p>
 
-            {claims ? (
-              <div className="space-y-4">
-                <div className="p-3.5 bg-slate-100 dark:bg-black/45 border border-slate-200 dark:border-white/5 rounded-xl font-mono text-[11px] text-slate-800 dark:text-slate-300 select-all overflow-x-auto whitespace-pre transition-colors duration-300 shadow-inner max-h-56 scrollbar-thin">
-                  {JSON.stringify(claims, null, 2)}
+            <div className="space-y-5">
+              
+              {/* Progress Bar 1: LSTM Model Queries */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-600 dark:text-slate-400 font-semibold">LSTM Model Queries (Daily)</span>
+                  <span className="text-slate-950 dark:text-white font-mono font-bold">4,812 / 10,000 calls</span>
                 </div>
+                <div className="w-full bg-slate-200 dark:bg-black/45 h-2 rounded-full overflow-hidden border border-slate-300/20 dark:border-white/5 shadow-inner">
+                  <div className="bg-gradient-to-r from-cyberBlue to-cyberTeal h-full rounded-full transition-all duration-500" style={{ width: '48.12%' }}></div>
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+                  <span>Reset in 14 hours</span>
+                  <span>48.12% utilized</span>
+                </div>
+              </div>
 
-                <div className="space-y-3.5 text-xs">
-                  <div className="flex justify-between border-b border-slate-200 dark:border-white/5 pb-2.5 transition-colors duration-300">
-                    <span className="text-slate-600 dark:text-slate-400 font-medium">Issuer ID (claims.id)</span>
-                    <span className="text-slate-800 dark:text-slate-200 font-bold select-all font-mono">{claims.id}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-200 dark:border-white/5 pb-2.5 transition-colors duration-300">
-                    <span className="text-slate-600 dark:text-slate-400 font-medium">Issued At (claims.iat)</span>
-                    <span className="text-slate-800 dark:text-slate-200 font-bold font-mono">
-                      {new Date(claims.iat * 1000).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between pb-1">
-                    <span className="text-slate-600 dark:text-slate-400 font-medium">Expires At (claims.exp)</span>
-                    <span className="text-slate-800 dark:text-slate-200 font-bold font-mono text-cyberTeal">
-                      {new Date(claims.exp * 1000).toLocaleString()}
-                    </span>
-                  </div>
+              {/* Progress Bar 2: Historical Tick Ingestion */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-600 dark:text-slate-400 font-semibold">Historical Ingestion Rows</span>
+                  <span className="text-slate-950 dark:text-white font-mono font-bold">892,100 / 1,000,000 rows</span>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-black/45 h-2 rounded-full overflow-hidden border border-slate-300/20 dark:border-white/5 shadow-inner">
+                  <div className="bg-gradient-to-r from-cyberTeal to-cyan-500 h-full rounded-full transition-all duration-500" style={{ width: '89.21%' }}></div>
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+                  <span>Upgrade to lift ceiling</span>
+                  <span className="text-amber-500 font-bold">89.21% full</span>
                 </div>
               </div>
-            ) : (
-              <div className="bg-yellow-400/10 border border-yellow-400/20 text-yellow-500 text-xs p-4 rounded-xl text-center">
-                No active token claims found in localStorage. Please authorize your session again.
+
+              {/* API Streaming & Connection Telemetry Grid */}
+              <div className="grid grid-cols-2 gap-3.5 pt-1.5">
+                <div className="p-3 bg-slate-200/40 dark:bg-black/35 border border-slate-300/30 dark:border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">WS Stream Latency</span>
+                  <span className="text-base font-extrabold text-cyberTeal block mt-1 font-mono">12ms</span>
+                  <span className="text-[9px] text-emerald-500 font-semibold block mt-0.5">Ultra Performance</span>
+                </div>
+                <div className="p-3 bg-slate-200/40 dark:bg-black/35 border border-slate-300/30 dark:border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Concurrent Sockets</span>
+                  <span className="text-base font-extrabold text-cyberBlue block mt-1 font-mono">3 / 3</span>
+                  <span className="text-[9px] text-slate-400 font-medium block mt-0.5">Limit Reached</span>
+                </div>
               </div>
-            )}
+
+              {/* Billing Cycle Details */}
+              <div className="p-3.5 bg-slate-200/40 dark:bg-black/35 border border-slate-300/30 dark:border-white/5 rounded-xl text-xs space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Monthly Plan Cost</span>
+                  <span className="text-slate-900 dark:text-white font-bold font-mono">$49.00 / month</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Billing Cycle Ends</span>
+                  <span className="text-slate-900 dark:text-white font-bold font-mono">June 22, 2026</span>
+                </div>
+                <div className="flex justify-between border-t border-slate-300/30 dark:border-white/5 pt-2">
+                  <span className="text-slate-500 dark:text-slate-400">Payment Gateway</span>
+                  <span className="text-cyberBlue font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 text-[10px]"></span>
+                    Stripe Active
+                  </span>
+                </div>
+              </div>
+
+            </div>
           </div>
 
           {/* SECURITY & TELEMETRY PREFERENCES */}
@@ -646,6 +677,68 @@ const Profile = () => {
         </div>
 
       </div>
+
+      {/* Collapsible Security Debug Console */}
+      <div className="mt-8 relative z-10">
+        <button
+          onClick={() => setShowDebugConsole(!showDebugConsole)}
+          className="w-full flex items-center justify-between p-4 bg-slate-200/30 dark:bg-black/25 border border-slate-300/30 dark:border-white/5 rounded-2xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 transition-colors cursor-pointer"
+        >
+          <span className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-cyberBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+            Developer Session Diagnostic Console (JWT Session Claims)
+          </span>
+          <svg className={`w-4 h-4 transition-transform duration-200 ${showDebugConsole ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {showDebugConsole && (
+          <div className="mt-4 glass-panel rounded-2xl p-6 border border-slate-200 dark:border-white/5 animate-[fadeIn_0.2s_ease-out] grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div>
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-1.5">Parsed Claims Structure</h4>
+              <p className="text-[10px] text-slate-500 mb-3">Decoded JSON payload representing signed JWT assertions for active tokens.</p>
+              {claims ? (
+                <div className="p-3.5 bg-slate-100 dark:bg-black/45 border border-slate-200 dark:border-white/5 rounded-xl font-mono text-[11px] text-slate-800 dark:text-slate-300 select-all overflow-x-auto whitespace-pre shadow-inner max-h-48">
+                  {JSON.stringify(claims, null, 2)}
+                </div>
+              ) : (
+                <div className="bg-yellow-400/10 border border-yellow-400/20 text-yellow-500 text-xs p-3.5 rounded-xl text-center">
+                  No active session claims found.
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3.5 text-xs pt-4 md:pt-8">
+              {claims ? (
+                <>
+                  <div className="flex justify-between border-b border-slate-200 dark:border-white/5 pb-2.5">
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">Issuer ID (claims.id)</span>
+                    <span className="text-slate-800 dark:text-slate-200 font-bold select-all font-mono">{claims.id}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-200 dark:border-white/5 pb-2.5">
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">Issued At (claims.iat)</span>
+                    <span className="text-slate-800 dark:text-slate-200 font-bold font-mono">
+                      {new Date(claims.iat * 1000).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">Expires At (claims.exp)</span>
+                    <span className="text-slate-800 dark:text-slate-200 font-bold font-mono text-cyberTeal">
+                      {new Date(claims.exp * 1000).toLocaleString()}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <span className="text-slate-400 text-xs">No diagnostic telemetry available.</span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 };
