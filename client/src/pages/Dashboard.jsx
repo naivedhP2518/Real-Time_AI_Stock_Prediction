@@ -358,9 +358,7 @@ const Dashboard = () => {
                   layoutId={`card-${stock.symbol}`}
                   key={stock.symbol}
                   onClick={() => setSelectedStock(stock)}
-                  whileHover={{ y: -3, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`p-4 rounded-xl cursor-pointer transition-all duration-300 border neon-glow-card ${
+                  className={`p-4 rounded-xl cursor-pointer transition-all duration-300 border ${
                     isSelected
                       ? "bg-slate-200/70 dark:bg-[#1E2943]/60 border-cyberBlue/60 shadow-md shadow-cyberBlue/5"
                       : `glass-panel hover:bg-slate-100 dark:hover:bg-[#1E2943]/20 hover:border-slate-300 dark:hover:border-white/10`
