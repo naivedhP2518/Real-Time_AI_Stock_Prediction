@@ -11,7 +11,17 @@ const MOCK_STOCKS = {
   COIN: { symbol: 'COIN', name: 'Coinbase Global, Inc.', price: 215.40, open: 228.20, high: 231.50, low: 210.60, volume: 14500000, change: -12.80, changePercent: -5.61, volatility: 'Extremely High', signal: 'SELL' },
   GOOGL: { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 173.50, open: 171.20, high: 175.40, low: 170.80, volume: 28900000, change: 2.30, changePercent: 1.34, volatility: 'Low', signal: 'BUY' },
   META: { symbol: 'META', name: 'Meta Platforms, Inc.', price: 475.20, open: 468.50, high: 479.80, low: 465.10, volume: 19800000, change: 6.70, changePercent: 1.43, volatility: 'Medium', signal: 'BUY' },
-  NFLX: { symbol: 'NFLX', name: 'Netflix, Inc.', price: 610.50, open: 615.00, high: 618.30, low: 604.20, volume: 6400000, change: -4.50, changePercent: -0.73, volatility: 'Medium', signal: 'HOLD' }
+  NFLX: { symbol: 'NFLX', name: 'Netflix, Inc.', price: 610.50, open: 615.00, high: 618.30, low: 604.20, volume: 6400000, change: -4.50, changePercent: -0.73, volatility: 'Medium', signal: 'HOLD' },
+  AMD: { symbol: 'AMD', name: 'Advanced Micro Devices, Inc.', price: 164.20, open: 160.50, high: 166.80, low: 159.20, volume: 48500000, change: 3.70, changePercent: 2.31, volatility: 'High', signal: 'BUY' },
+  INTC: { symbol: 'INTC', name: 'Intel Corporation', price: 30.45, open: 31.20, high: 31.50, low: 29.80, volume: 38900000, change: -0.75, changePercent: -2.40, volatility: 'Medium', signal: 'SELL' },
+  BABA: { symbol: 'BABA', name: 'Alibaba Group Holding Limited', price: 82.30, open: 80.10, high: 83.50, low: 79.50, volume: 18400000, change: 2.20, changePercent: 2.75, volatility: 'High', signal: 'BUY' },
+  PYPL: { symbol: 'PYPL', name: 'PayPal Holdings, Inc.', price: 62.15, open: 63.40, high: 63.80, low: 61.20, volume: 12400000, change: -1.25, changePercent: -1.97, volatility: 'Medium', signal: 'HOLD' },
+  DIS: { symbol: 'DIS', name: 'The Walt Disney Company', price: 102.80, open: 98.90, high: 104.20, low: 98.10, volume: 9200000, change: 3.90, changePercent: 3.94, volatility: 'Low', signal: 'BUY' },
+  V: { symbol: 'V', name: 'Visa Inc.', price: 278.40, open: 275.20, high: 280.10, low: 274.50, volume: 6400000, change: 3.20, changePercent: 1.16, volatility: 'Low', signal: 'BUY' },
+  JPM: { symbol: 'JPM', name: 'JPMorgan Chase & Co.', price: 198.50, open: 199.20, high: 201.30, low: 196.40, volume: 10200000, change: -0.70, changePercent: -0.35, volatility: 'Low', signal: 'HOLD' },
+  NKE: { symbol: 'NKE', name: 'NIKE, Inc.', price: 94.10, open: 95.80, high: 96.20, low: 93.10, volume: 7800000, change: -1.70, changePercent: -1.77, volatility: 'Medium', signal: 'SELL' },
+  WMT: { symbol: 'WMT', name: 'Walmart Inc.', price: 64.80, open: 64.20, high: 65.30, low: 63.90, volume: 15400000, change: 0.60, changePercent: 0.93, volatility: 'Low', signal: 'BUY' },
+  XOM: { symbol: 'XOM', name: 'Exxon Mobil Corporation', price: 114.60, open: 112.40, high: 115.80, low: 111.90, volume: 14200000, change: 2.20, changePercent: 1.96, volatility: 'Low', signal: 'BUY' }
 };
 
 // Mock Indices and Crypto
