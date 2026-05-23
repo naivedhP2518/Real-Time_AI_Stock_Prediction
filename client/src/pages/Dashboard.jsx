@@ -240,6 +240,94 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Live Professional Trending Ticker Tape Marquee */}
+      <div className="relative glass-panel rounded-2xl border border-slate-200 dark:border-white/5 py-4 px-4 mb-8 overflow-hidden flex items-center shadow-sm select-none">
+        
+        {/* Left static badge header */}
+        <div className="flex items-center space-x-2 shrink-0 border-r border-slate-200 dark:border-white/10 pr-4 mr-4 bg-slate-50 dark:bg-[#0B0F19] z-10 transition-colors duration-300">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
+          </span>
+          <span className="text-[10px] font-black tracking-wider uppercase text-slate-700 dark:text-slate-200 flex items-center gap-1">
+            <svg className="w-3.5 h-3.5 text-orange-500 fill-orange-500 animate-pulse" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.926-.214.378-.34.8-.45 1.258-.208.865-.507 1.747-.942 2.606C8.256 7.92 7.561 8.906 7 9.851V10a1 1 0 01-1 1h-1zM5 12a1 1 0 100 2h1a2 2 0 002-2V9.83a8.001 8.001 0 00-2.85 4.887l-.022.062a1 1 0 001.022 1.221h2a2 2 0 002-2v-1.13c.748.283 1.442.742 2.052 1.352a1 1 0 001.414-1.414c-.933-.933-2.15-1.585-3.466-1.85V9.45c1.464-.265 2.825-.972 3.93-2.077a1 1 0 00-1.414-1.414c-.752.752-1.68 1.245-2.686 1.444-.33-.678-.582-1.394-.74-2.13a16.037 16.037 0 00-.53-1.84c.162.298.34.583.535.855a1 1 0 101.664-1.11A18.067 18.067 0 0112 3v-.447z" clipRule="evenodd" />
+            </svg>
+            <span>Trending Tape</span>
+          </span>
+        </div>
+
+        {/* Dynamic Fading Masks */}
+        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-slate-50 dark:from-[#0B0F19] to-transparent z-10 pointer-events-none" />
+        <div className="absolute left-32 top-0 bottom-0 w-24 bg-gradient-to-r from-slate-50 dark:from-[#0B0F19] to-transparent z-10 pointer-events-none" />
+
+        {/* Marquee sliding track container */}
+        <div className="w-full overflow-hidden flex items-center">
+          <div className="animate-marquee flex items-center space-x-12">
+            
+            {/* Track 1 */}
+            {stocks.map((stock, sIdx) => {
+              const isUp = stock.change >= 0;
+              const flash = tickerFlash[stock.symbol];
+              const isSelected = selectedStock?.symbol === stock.symbol;
+
+              let itemFlash = '';
+              if (flash === 'up') itemFlash = 'text-accentGreen scale-105 font-black';
+              else if (flash === 'down') itemFlash = 'text-accentRed scale-105 font-black';
+
+              return (
+                <div
+                  key={`marq-1-${stock.symbol}-${sIdx}`}
+                  onClick={() => setSelectedStock(stock)}
+                  className={`flex items-center space-x-2.5 text-xs font-semibold cursor-pointer py-1 px-3 rounded-xl transition-all duration-300 ${
+                    isSelected 
+                      ? 'bg-cyberBlue/10 text-cyberBlue border border-cyberBlue/30 shadow-sm'
+                      : 'hover:bg-slate-200/50 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  } ${itemFlash}`}
+                >
+                  <span className="font-extrabold tracking-wide">{stock.symbol}</span>
+                  <span className="font-mono font-bold">${stock.price.toFixed(2)}</span>
+                  <span className={`flex items-center font-black text-[10px] ${isUp ? 'text-accentGreen animate-pulse' : 'text-accentRed animate-pulse'}`}>
+                    {isUp ? '▲' : '▼'} {Math.abs(stock.changePercent).toFixed(2)}%
+                  </span>
+                </div>
+              );
+            })}
+
+            {/* Track 2: Duplicate for continuous slider wrapping */}
+            {stocks.map((stock, sIdx) => {
+              const isUp = stock.change >= 0;
+              const flash = tickerFlash[stock.symbol];
+              const isSelected = selectedStock?.symbol === stock.symbol;
+
+              let itemFlash = '';
+              if (flash === 'up') itemFlash = 'text-accentGreen scale-105 font-black';
+              else if (flash === 'down') itemFlash = 'text-accentRed scale-105 font-black';
+
+              return (
+                <div
+                  key={`marq-2-${stock.symbol}-${sIdx}`}
+                  onClick={() => setSelectedStock(stock)}
+                  className={`flex items-center space-x-2.5 text-xs font-semibold cursor-pointer py-1 px-3 rounded-xl transition-all duration-300 ${
+                    isSelected 
+                      ? 'bg-cyberBlue/10 text-cyberBlue border border-cyberBlue/30 shadow-sm'
+                      : 'hover:bg-slate-200/50 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  } ${itemFlash}`}
+                >
+                  <span className="font-extrabold tracking-wide">{stock.symbol}</span>
+                  <span className="font-mono font-bold">${stock.price.toFixed(2)}</span>
+                  <span className={`flex items-center font-black text-[10px] ${isUp ? 'text-accentGreen animate-pulse' : 'text-accentRed animate-pulse'}`}>
+                    {isUp ? '▲' : '▼'} {Math.abs(stock.changePercent).toFixed(2)}%
+                  </span>
+                </div>
+              );
+            })}
+
+          </div>
+        </div>
+
+      </div>
+
       {error && (
         <div className="p-4 bg-accentRed/10 border border-accentRed/35 text-accentRed rounded-xl text-xs flex justify-between items-center mb-6">
           <span>{error}</span>
@@ -277,7 +365,9 @@ const Dashboard = () => {
                   layoutId={`card-${stock.symbol}`}
                   key={stock.symbol}
                   onClick={() => setSelectedStock(stock)}
-                  className={`p-4 rounded-xl cursor-pointer transition-all duration-300 border ${
+                  whileHover={{ y: -3, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`p-4 rounded-xl cursor-pointer transition-all duration-300 border neon-glow-card ${
                     isSelected
                       ? "bg-slate-200/70 dark:bg-[#1E2943]/60 border-cyberBlue/60 shadow-md shadow-cyberBlue/5"
                       : `glass-panel hover:bg-slate-100 dark:hover:bg-[#1E2943]/20 hover:border-slate-300 dark:hover:border-white/10`

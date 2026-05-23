@@ -71,3 +71,38 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #3B82F6;
 }
+
+/* Horizontal Marquee Infinite Ticker Tape Animation */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Glassmorphic Glowing Boarder */
+.neon-glow-card {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.neon-glow-card:hover {
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.dark .neon-glow-card {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.05);
+}
+.dark .neon-glow-card:hover {
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.45);
+}
+
