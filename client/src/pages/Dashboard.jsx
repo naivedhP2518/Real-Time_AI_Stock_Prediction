@@ -243,26 +243,27 @@ const Dashboard = () => {
       {/* Live Professional Trending Ticker Tape Marquee */}
       <div className="relative glass-panel rounded-2xl border border-slate-200 dark:border-white/5 py-4 px-4 mb-8 overflow-hidden flex items-center shadow-sm select-none">
         
-        {/* Left static badge header */}
-        <div className="flex items-center space-x-2 shrink-0 border-r border-slate-200 dark:border-white/10 pr-4 mr-4 bg-slate-50 dark:bg-[#0B0F19] z-10 transition-colors duration-300">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
-          </span>
-          <span className="text-[10px] font-black tracking-wider uppercase text-slate-700 dark:text-slate-200 flex items-center gap-1">
-            <svg className="w-3.5 h-3.5 text-orange-500 fill-orange-500 animate-pulse" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.926-.214.378-.34.8-.45 1.258-.208.865-.507 1.747-.942 2.606C8.256 7.92 7.561 8.906 7 9.851V10a1 1 0 01-1 1h-1zM5 12a1 1 0 100 2h1a2 2 0 002-2V9.83a8.001 8.001 0 00-2.85 4.887l-.022.062a1 1 0 001.022 1.221h2a2 2 0 002-2v-1.13c.748.283 1.442.742 2.052 1.352a1 1 0 001.414-1.414c-.933-.933-2.15-1.585-3.466-1.85V9.45c1.464-.265 2.825-.972 3.93-2.077a1 1 0 00-1.414-1.414c-.752.752-1.68 1.245-2.686 1.444-.33-.678-.582-1.394-.74-2.13a16.037 16.037 0 00-.53-1.84c.162.298.34.583.535.855a1 1 0 101.664-1.11A18.067 18.067 0 0112 3v-.447z" clipRule="evenodd" />
-            </svg>
-            <span>Trending Tape</span>
-          </span>
+        {/* Left static badge header with integrated gradient fade mask */}
+        <div className="absolute left-0 top-0 bottom-0 pl-4 pr-16 bg-gradient-to-r from-slate-50 via-slate-50 to-transparent dark:from-[#0B0F19] dark:via-[#0B0F19] z-20 flex items-center transition-all duration-300 pointer-events-none">
+          <div className="flex items-center space-x-2 shrink-0 border-r border-slate-200 dark:border-white/10 pr-4 mr-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+            </span>
+            <span className="text-[10px] font-black tracking-wider uppercase text-slate-700 dark:text-slate-200 flex items-center gap-1 select-none">
+              <svg className="w-3.5 h-3.5 text-orange-500 fill-orange-500 animate-pulse" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.926-.214.378-.34.8-.45 1.258-.208.865-.507 1.747-.942 2.606C8.256 7.92 7.561 8.906 7 9.851V10a1 1 0 01-1 1h-1zM5 12a1 1 0 100 2h1a2 2 0 002-2V9.83a8.001 8.001 0 00-2.85 4.887l-.022.062a1 1 0 001.022 1.221h2a2 2 0 002-2v-1.13c.748.283 1.442.742 2.052 1.352a1 1 0 001.414-1.414c-.933-.933-2.15-1.585-3.466-1.85V9.45c1.464-.265 2.825-.972 3.93-2.077a1 1 0 00-1.414-1.414c-.752.752-1.68 1.245-2.686 1.444-.33-.678-.582-1.394-.74-2.13a16.037 16.037 0 00-.53-1.84c.162.298.34.583.535.855a1 1 0 101.664-1.11A18.067 18.067 0 0112 3v-.447z" clipRule="evenodd" />
+              </svg>
+              <span>TRENDING NOW</span>
+            </span>
+          </div>
         </div>
 
-        {/* Dynamic Fading Masks */}
+        {/* Dynamic Fading Mask (Right) */}
         <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-slate-50 dark:from-[#0B0F19] to-transparent z-10 pointer-events-none" />
-        <div className="absolute left-32 top-0 bottom-0 w-24 bg-gradient-to-r from-slate-50 dark:from-[#0B0F19] to-transparent z-10 pointer-events-none" />
 
         {/* Marquee sliding track container */}
-        <div className="w-full overflow-hidden flex items-center">
+        <div className="w-full overflow-hidden flex items-center pl-36">
           <div className="animate-marquee flex items-center space-x-12">
             
             {/* Track 1 */}
