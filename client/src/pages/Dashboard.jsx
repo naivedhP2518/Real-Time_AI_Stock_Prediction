@@ -280,11 +280,7 @@ const Dashboard = () => {
                 <div
                   key={`marq-1-${stock.symbol}-${sIdx}`}
                   onClick={() => setSelectedStock(stock)}
-                  className={`flex items-center space-x-2.5 text-xs font-semibold cursor-pointer py-1 px-3 rounded-xl transition-all duration-300 border ${
-                    isSelected 
-                      ? 'bg-cyberBlue/15 text-cyberBlue border-cyberBlue/50 shadow-md shadow-cyberBlue/5'
-                      : 'bg-slate-200/40 dark:bg-white/5 border-slate-300/30 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/10 shadow-sm'
-                  } ${itemFlash}`}
+                  className={`flex items-center space-x-2.5 text-xs font-semibold cursor-pointer py-1 px-3 rounded-xl transition-all duration-300 border bg-slate-200/40 dark:bg-white/5 border-slate-300/30 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/10 shadow-sm ${itemFlash}`}
                 >
                   <span className="font-extrabold tracking-wide">{stock.symbol}</span>
                   <span className="font-mono font-bold">${stock.price.toFixed(2)}</span>
@@ -309,11 +305,7 @@ const Dashboard = () => {
                 <div
                   key={`marq-2-${stock.symbol}-${sIdx}`}
                   onClick={() => setSelectedStock(stock)}
-                  className={`flex items-center space-x-2.5 text-xs font-semibold cursor-pointer py-1 px-3 rounded-xl transition-all duration-300 border ${
-                    isSelected 
-                      ? 'bg-cyberBlue/15 text-cyberBlue border-cyberBlue/50 shadow-md shadow-cyberBlue/5'
-                      : 'bg-slate-200/40 dark:bg-white/5 border-slate-300/30 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/10 shadow-sm'
-                  } ${itemFlash}`}
+                  className={`flex items-center space-x-2.5 text-xs font-semibold cursor-pointer py-1 px-3 rounded-xl transition-all duration-300 border bg-slate-200/40 dark:bg-white/5 border-slate-300/30 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/10 shadow-sm ${itemFlash}`}
                 >
                   <span className="font-extrabold tracking-wide">{stock.symbol}</span>
                   <span className="font-mono font-bold">${stock.price.toFixed(2)}</span>
