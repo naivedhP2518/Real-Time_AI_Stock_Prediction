@@ -1,27 +1,44 @@
-# Logs
+# ============================================================
+# server/.gitignore — Express.js Backend
+# ============================================================
+
+# ── Logs ─────────────────────────────────────────────────────
 logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Dependencies
+# ── Dependencies ─────────────────────────────────────────────
 node_modules/
 
-# Environments (CRITICAL SECURITY)
+# ── Environment & Secrets (NEVER commit) ──────────────────────
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 *.env
+*.pem
+*.key
+*.cert
 
-# Local database storage / SQLite
+# ── Database files ────────────────────────────────────────────
 *.db
 *.sqlite
+*.sqlite3
 data/db/
 
-# Editor & System Files
+# ── Build Outputs ─────────────────────────────────────────────
+dist/
+build/
+
+# ── Testing & Coverage ────────────────────────────────────────
+coverage/
+.nyc_output/
+*.lcov
+.jest-cache/
+
+# ── Editor & OS ───────────────────────────────────────────────
 .vscode/
 .idea/
 .DS_Store
+Thumbs.db

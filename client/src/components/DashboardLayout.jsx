@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
+import { io } from 'socket.io-client';
 import API from '../services/api';
 
 const DashboardLayout = () => {
@@ -12,8 +13,9 @@ const DashboardLayout = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [activeToastAlert, setActiveToastAlert] = useState(null);
   const [notifications, setNotifications] = useState([
-    { id: 1, message: 'NVDA reached a new peak of $924.80!', time: '2 mins ago', read: false },
+    { id: 1, message: 'NVDA reached a peak of $924.80!', time: '2 mins ago', read: false },
     { id: 2, message: 'AI Forecast updated for TSLA (Strong Buy)', time: '1 hour ago', read: false },
     { id: 3, message: 'Solana is surging today, up over 7%', time: '3 hours ago', read: true },
   ]);
@@ -22,6 +24,40 @@ const DashboardLayout = () => {
   const notifRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Socket.io Price Alert trigger listener
+  useEffect(() => {
+    if (!user || !user._id) return;
+
+    console.log(`[Alert System Client] Connecting websocket channels for user: ${user.name}`);
+    const socket = io('http://localhost:5000');
+
+    socket.on(`alert-triggered-${user._id}`, (data) => {
+      console.log('[Alert System Client] Target Crossed:', data);
+      setActiveToastAlert(data);
+      
+      // Add to notifications dropdown list
+      setNotifications(prev => [
+        {
+          id: Date.now(),
+          message: data.message,
+          time: 'Just now',
+          read: false
+        },
+        ...prev
+      ]);
+      
+      // Auto dismiss after 8 seconds
+      setTimeout(() => {
+        setActiveToastAlert(prev => prev && prev._id === data._id ? null : prev);
+      }, 8000);
+    });
+
+    return () => {
+      console.log('[Alert System Client] Closing socket connections...');
+      socket.disconnect();
+    };
+  }, [user]);
 
   // Close menus on outside click
   useEffect(() => {
@@ -90,6 +126,15 @@ const DashboardLayout = () => {
       )
     },
     {
+      name: 'Portfolio',
+      path: '/portfolio',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg>
+      )
+    },
+    {
       name: 'Markets',
       path: '/markets',
       icon: (
@@ -117,6 +162,15 @@ const DashboardLayout = () => {
       )
     },
     {
+      name: 'Technical Hub',
+      path: '/analytics',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8v8m-4-5v5m-4-2v2M4 21h16a2 2 0 002-2V5a2 2 0 00-2-2H4a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+      )
+    },
+    {
       name: 'Profile',
       path: '/profile',
       icon: (
@@ -124,8 +178,17 @@ const DashboardLayout = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       )
-    }
-  ];
+    },
+    ...(user && user.isAdmin ? [{
+      name: 'Admin Panel',
+      path: '/admin',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+        </svg>
+      )
+    }] : [])
+  ];                  
 
   return (
     <div className="flex h-screen w-full bg-slate-50 dark:bg-[#0B0F19] text-slate-800 dark:text-slate-100 transition-colors duration-300 overflow-hidden">
@@ -264,7 +327,7 @@ const DashboardLayout = () => {
               </svg>
             </button>
             <div className="hidden sm:block">
-              <span className="text-xs text-cyberBlue dark:text-cyberTeal font-bold tracking-wider uppercase">MERN Predictive Terminal</span>
+              <span className="text-xs text-cyberBlue dark:text-cyberTeal font-bold tracking-wider uppercase"></span>
             </div>
           </div>
 
@@ -411,6 +474,37 @@ const DashboardLayout = () => {
         </main>
 
       </div>
+
+      {/* Real-time price trigger alert toast */}
+      {activeToastAlert && (
+        <div className="fixed bottom-6 right-6 z-50 glass-panel border-l-4 border-l-accentGreen rounded-2xl p-5 shadow-2xl shadow-accentGreen/10 max-w-sm animate-bounce w-80">
+          <div className="flex justify-between items-start">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 bg-accentGreen/10 rounded-full flex items-center justify-center border border-accentGreen/20 text-accentGreen flex-shrink-0 relative">
+                <span className="w-1.5 h-1.5 bg-accentGreen rounded-full absolute animate-ping"></span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 0 1-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+                </svg>
+              </div>
+              <div>
+                <span className="text-xs font-black text-slate-900 dark:text-white block">Price Target Hit!</span>
+                <span className="text-[10px] text-slate-500 font-bold tracking-wide uppercase font-mono mt-0.5">{activeToastAlert.symbol} crossed {activeToastAlert.type}</span>
+              </div>
+            </div>
+            <button 
+              onClick={() => setActiveToastAlert(null)}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-0.5 cursor-pointer"
+            >
+              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-relaxed font-semibold mt-3">
+            {activeToastAlert.message}
+          </p>
+        </div>
+      )}
 
     </div>
   );

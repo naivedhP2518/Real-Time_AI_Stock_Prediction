@@ -12,6 +12,9 @@ import Markets from './pages/Markets';
 import Watchlist from './pages/Watchlist';
 import Predictions from './pages/Predictions';
 import Profile from './pages/Profile';
+import Portfolio from './pages/Portfolio';
+import Analytics from './pages/Analytics';
+import Admin from './pages/Admin';
 
 function App() {
   return (
@@ -53,10 +56,13 @@ function App() {
                 }
               >
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/portfolio" element={<Portfolio />} />
                 <Route path="/markets" element={<Markets />} />
                 <Route path="/watchlist" element={<Watchlist />} />
                 <Route path="/predictions" element={<Predictions />} />
+                <Route path="/analytics" element={<Analytics />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/admin" element={<Admin />} />
               </Route>
 
               {/* Default fallbacks */}

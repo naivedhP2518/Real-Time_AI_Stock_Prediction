@@ -1,0 +1,100 @@
+# ============================================================
+# ROOT .gitignore — Real-Time AI Stock Prediction
+# ============================================================
+
+# ── OS & Editor ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.iml
+
+# ── Logs ─────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ── Environment & Secrets (NEVER commit these) ────────────────
+.env
+.env.*
+!.env.example
+*.env
+secrets/
+*.pem
+*.key
+*.cert
+*.p12
+
+# ── Node (client & server) ───────────────────────────────────
+node_modules/
+dist/
+dist-ssr/
+.cache/
+.parcel-cache/
+
+# ── Python (ml-service) ──────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+.conda/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# ML artefacts (large binary files — retrain locally)
+ml-service/trained_models/*.npz
+ml-service/trained_models/*.pkl
+ml-service/trained_models/*.h5
+ml-service/trained_models/*.pt
+ml-service/trained_models/*.pth
+ml-service/trained_models/*.onnx
+
+# Training loss plots (regenerated on train)
+ml-service/trained_models/*.png
+
+# Raw datasets (large CSV files — download/generate locally)
+ml-service/datasets/*.csv
+ml-service/datasets/*.parquet
+ml-service/datasets/*.json
+
+# ── Coverage & Testing ───────────────────────────────────────
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+.nyc_output/
+*.lcov
+
+# ── Misc build artefacts ─────────────────────────────────────
+*.tgz
+*.tar.gz
+*.zip

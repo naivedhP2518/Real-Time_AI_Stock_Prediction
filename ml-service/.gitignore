@@ -1,0 +1,85 @@
+# ============================================================
+# ml-service/.gitignore — Python Flask + LSTM ML Service
+# ============================================================
+
+# ── Python Bytecode & Cache ───────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+
+# ── Virtual Environments ──────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.conda/
+*.egg
+*.egg-info/
+pip-wheel-metadata/
+
+# ── Environment & Secrets ─────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.env
+
+# ── Trained Model Artefacts (large binaries — retrain locally) ─
+trained_models/*.npz
+trained_models/*.pkl
+trained_models/*.h5
+trained_models/*.pt
+trained_models/*.pth
+trained_models/*.onnx
+trained_models/*.pb
+trained_models/*.tflite
+trained_models/*.joblib
+
+# ── Training Charts / Plots (auto-generated) ─────────────────
+trained_models/*.png
+trained_models/*.jpg
+trained_models/*.jpeg
+trained_models/*.svg
+
+# Keep the trained_models directory itself
+!trained_models/.gitkeep
+
+# ── Datasets (large CSV/data files — download/generate locally) ─
+datasets/*.csv
+datasets/*.parquet
+datasets/*.json
+datasets/*.feather
+datasets/*.hdf5
+datasets/*.h5
+
+# Keep the datasets directory itself
+!datasets/.gitkeep
+
+# ── Jupyter Notebooks ─────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Testing & Coverage ────────────────────────────────────────
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.lcov
+
+# ── Build / Distribution ──────────────────────────────────────
+build/
+dist/
+*.egg-info/
+
+# ── Logs ─────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── Editor & OS ───────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
