@@ -309,7 +309,7 @@ See [`server/.env.example`](./server/.env.example) for the complete list.
 
 ## 📜 License
 
-ISC © 2025 — Built as an advanced MERN + AI full-stack portfolio project.
+ISC © 2025 — Built as an advanced MERN + AI full-stack  project.
 
 ---
 
