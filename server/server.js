@@ -1,11 +1,23 @@
+/**
+ * @file server.js
+ * @description Production-hardened Express + Socket.io server.
+ *              Features: Winston logging, Morgan HTTP logs, performance monitoring,
+ *              enhanced security headers, Redis caching, graceful shutdown.
+ */
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const http = require('http');
+const morgan = require('morgan');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
+const { connectRedis } = require('./config/redis');
+const logger = require('./utils/logger');
+const { performanceMonitor, getMetrics } = require('./middleware/performanceMonitor');
+const { notFound, globalErrorHandler } = require('./middleware/errorHandler');
 
 // Route Imports
 const authRoutes = require('./routes/authRoutes');
@@ -14,6 +26,7 @@ const portfolioRoutes = require('./routes/portfolioRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const newsRoutes = require('./routes/newsRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const predictionRoutes = require('./routes/predictionRoutes');
 
 // Controllers & Models
 const { MOCK_STOCKS, getStockDetails } = require('./controllers/stockController');
@@ -22,140 +35,256 @@ const Alert = require('./models/Alert');
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
+// ─── DB Connections ───────────────────────────────────────────────────────────
 connectDB();
+connectRedis(); // Gracefully degrades if Redis is unavailable
 
+// ─── App & HTTP Server ────────────────────────────────────────────────────────
 const app = express();
 const server = http.createServer(app);
 
-// Configure Socket.io with CORS limits
+// ─── Socket.io ────────────────────────────────────────────────────────────────
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
 const io = new Server(server, {
   cors: {
-    origin: '*', // For development; narrow down in production
-    methods: ['GET', 'POST']
-  }
+    origin: process.env.NODE_ENV === 'production' ? ALLOWED_ORIGINS : '*',
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
-// 1. Advanced Security Headers
+// ─── Security Middleware ──────────────────────────────────────────────────────
+
+// Helmet — comprehensive HTTP security headers
 app.use(helmet({
-  contentSecurityPolicy: false, // Turn off for local development with charts/CDNs
+  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+      fontSrc: ["'self'", 'fonts.gstatic.com'],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", ...ALLOWED_ORIGINS],
+    },
+  } : false,
+  crossOriginEmbedderPolicy: false,
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
 }));
 
-// 2. Global Rate Limiter
-const apiLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10 minutes window
-  max: 200, // Limit each IP to 200 requests per window
-  message: { message: 'Too many requests from this IP. Please try again after 10 minutes.' }
-});
-app.use('/api/', apiLimiter);
-
-// Enable CORS with support for frontend clients
+// CORS
 app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: process.env.NODE_ENV === 'production' ? ALLOWED_ORIGINS : '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }));
 
-// Body parser middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-
-// Request logger for backend audit
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString().slice(11, 19)}] ${req.method} ${req.path}`);
-  next();
+// General API rate limiter
+const apiLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { status: 'fail', message: 'Too many requests from this IP. Please try again in 10 minutes.' },
+  handler: (req, res, next, options) => {
+    logger.warn(`[Rate Limit] IP ${req.ip} exceeded API rate limit`);
+    res.status(options.statusCode).json(options.message);
+  },
 });
 
-// Mount Routes
+// Stricter auth rate limiter (brute-force protection)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Only 10 auth attempts per 15 min
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { status: 'fail', message: 'Too many login attempts. Please try again in 15 minutes.' },
+  handler: (req, res, next, options) => {
+    logger.warn(`[Auth Rate Limit] IP ${req.ip} exceeded auth rate limit on ${req.path}`);
+    res.status(options.statusCode).json(options.message);
+  },
+});
+
+app.use('/api/', apiLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
+// ─── HTTP Logging (Morgan → Winston) ─────────────────────────────────────────
+const morganFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
+app.use(morgan(morganFormat, { stream: logger.stream }));
+
+// ─── Performance Monitoring ───────────────────────────────────────────────────
+app.use(performanceMonitor);
+
+// ─── Body Parsers ─────────────────────────────────────────────────────────────
+app.use(express.json({ limit: '10kb' })); // Limit payload size
+app.use(express.urlencoded({ extended: false, limit: '10kb' }));
+
+// ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/stocks', stockRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api', predictionRoutes);
 
-// Base route
+// ─── Health & Metrics Endpoints ───────────────────────────────────────────────
 app.get('/', (req, res) => {
-  res.json({ message: 'Stock Platform Auth, Portfolio, News & Alerts APIs are active!' });
-});
-
-// Socket.io connection desk
-io.on('connection', (socket) => {
-  console.log(`Socket client connected: ${socket.id}`);
-  
-  socket.on('disconnect', () => {
-    console.log(`Socket client disconnected: ${socket.id}`);
+  res.json({
+    status: 'online',
+    service: 'Real-Time AI Stock Prediction Platform API',
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    uptime: Math.floor(process.uptime()),
   });
 });
 
-// Broadcast stock price ticks and verify Price Target alerts every 3.5 seconds
-setInterval(async () => {
-  try {
-    const symbols = Object.keys(MOCK_STOCKS);
-    const tickPromises = symbols.map(sym => getStockDetails(sym));
-    const tickedDetails = await Promise.all(tickPromises);
-    
-    // Broadcast live stock quotes feed
-    io.emit('stock-ticks', tickedDetails);
-    
-    // Asynchronous Event-Driven Alert triggers
-    const activeAlerts = await Alert.find({ isActive: true });
-    if (activeAlerts.length > 0) {
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
+  });
+});
+
+app.get('/api/metrics', (req, res) => {
+  // In production, secure this with admin middleware
+  res.json(getMetrics());
+});
+
+// ─── Socket.io Events ─────────────────────────────────────────────────────────
+let connectedClients = 0;
+
+io.on('connection', (socket) => {
+  connectedClients++;
+  logger.info(`[Socket] Client connected: ${socket.id} | Total: ${connectedClients}`);
+
+  socket.on('disconnect', (reason) => {
+    connectedClients--;
+    logger.debug(`[Socket] Client disconnected: ${socket.id} | Reason: ${reason} | Total: ${connectedClients}`);
+  });
+
+  socket.on('error', (err) => {
+    logger.error(`[Socket] Error on ${socket.id}: ${err.message}`);
+  });
+
+  // Subscribe to specific stock rooms
+  socket.on('subscribe-stock', (symbol) => {
+    socket.join(`stock:${symbol}`);
+    logger.debug(`[Socket] ${socket.id} subscribed to stock:${symbol}`);
+  });
+
+  socket.on('unsubscribe-stock', (symbol) => {
+    socket.leave(`stock:${symbol}`);
+  });
+});
+
+// ─── Live Stock Tick Broadcaster ─────────────────────────────────────────────
+let tickInterval;
+
+const startTickBroadcast = () => {
+  tickInterval = setInterval(async () => {
+    try {
+      const symbols = Object.keys(MOCK_STOCKS);
+      const tickedDetails = await Promise.all(symbols.map(sym => getStockDetails(sym)));
+
+      // Broadcast live stock feed
+      io.emit('stock-ticks', tickedDetails);
+
+      // Check and fire price alerts
+      const activeAlerts = await Alert.find({ isActive: true });
       for (const alert of activeAlerts) {
         const currentTick = tickedDetails.find(t => t.symbol === alert.symbol);
         if (!currentTick) continue;
-        
-        let isTriggered = false;
-        if (alert.type === 'ABOVE' && currentTick.price >= alert.targetPrice) {
-          isTriggered = true;
-        } else if (alert.type === 'BELOW' && currentTick.price <= alert.targetPrice) {
-          isTriggered = true;
-        }
-        
+
+        const isTriggered =
+          (alert.type === 'ABOVE' && currentTick.price >= alert.targetPrice) ||
+          (alert.type === 'BELOW' && currentTick.price <= alert.targetPrice);
+
         if (isTriggered) {
-          console.log(`[ALERT ACTIVE] Price trigger crossed for ${alert.symbol}: Target $${alert.targetPrice}, Current $${currentTick.price}`);
-          
-          // Emit direct targeted websocket payload
+          logger.info(`[Alert] Triggered: ${alert.symbol} crossed ${alert.type} $${alert.targetPrice}`, {
+            userId: alert.user,
+            currentPrice: currentTick.price,
+          });
+
           io.emit(`alert-triggered-${alert.user}`, {
             _id: alert._id,
             symbol: alert.symbol,
             targetPrice: alert.targetPrice,
             currentPrice: currentTick.price,
             type: alert.type,
-            message: `CRITICAL PRICE ALERT: ${alert.symbol} crossed ${alert.type.toLowerCase()} $${alert.targetPrice}! Current trading price is $${currentTick.price.toFixed(2)}.`
+            message: `PRICE ALERT: ${alert.symbol} crossed ${alert.type.toLowerCase()} $${alert.targetPrice}! Current: $${currentTick.price.toFixed(2)}`,
           });
-          
-          // Deactivate so it only alerts once
+
           alert.isActive = false;
           await alert.save();
         }
       }
+    } catch (error) {
+      logger.error(`[Socket Tick] Broadcast error: ${error.message}`, { stack: error.stack });
     }
-    
-  } catch (error) {
-    console.error('Socket Broadcast Tick and Alert Error:', error.message);
-  }
-}, 3500);
+  }, 3500);
+};
 
-// 404 Route handler
-app.use((req, res, next) => {
-  const error = new Error(`Not Found - ${req.originalUrl}`);
-  res.status(404);
-  next(error);
-});
+startTickBroadcast();
 
-// Global Error handling middleware
-app.use((err, req, res, next) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  res.status(statusCode).json({
-    message: err.message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
-  });
-});
+// ─── Error Handlers ───────────────────────────────────────────────────────────
+app.use(notFound);
+app.use(globalErrorHandler);
 
+// ─── Start Server ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
-// Listen on HTTP server
 server.listen(PORT, () => {
-  console.log(`Server launched successfully in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  logger.info(`🚀 Server launched in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });
+
+// ─── Graceful Shutdown ────────────────────────────────────────────────────────
+const gracefulShutdown = async (signal) => {
+  logger.info(`[Shutdown] Received ${signal}. Shutting down gracefully...`);
+
+  clearInterval(tickInterval);
+
+  server.close(async () => {
+    logger.info('[Shutdown] HTTP server closed.');
+    try {
+      const mongoose = require('mongoose');
+      await mongoose.connection.close();
+      logger.info('[Shutdown] MongoDB connection closed.');
+    } catch (err) {
+      logger.error('[Shutdown] Error closing MongoDB:', err);
+    }
+    process.exit(0);
+  });
+
+  // Force exit if graceful shutdown takes too long
+  setTimeout(() => {
+    logger.error('[Shutdown] Forced exit after timeout.');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+process.on('uncaughtException', (err) => {
+  logger.error(`[Uncaught Exception] ${err.message}`, { stack: err.stack });
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error(`[Unhandled Rejection] at: ${promise}`, { reason });
+  process.exit(1);
+});
+
+module.exports = { app, server };

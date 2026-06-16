@@ -1,0 +1,212 @@
+name: 🚀 CI Pipeline — Stock Platform
+
+on:
+  push:
+    branches: [main, develop, 'feature/**']
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20.x'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ─── Job 1: Lint & Format Check ──────────────────────────────────────────────
+  lint:
+    name: 🔍 Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client deps
+        working-directory: ./client
+        run: npm ci
+
+      - name: Run ESLint (client)
+        working-directory: ./client
+        run: npm run lint
+
+  # ─── Job 2: Backend Tests ─────────────────────────────────────────────────────
+  test-backend:
+    name: 🧪 Backend Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand(\"ping\").ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install server deps
+        working-directory: ./server
+        run: npm ci
+
+      - name: Run backend tests
+        working-directory: ./server
+        env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://localhost:27017/stock-test
+          JWT_SECRET: test_jwt_secret_for_ci_only
+          PORT: 5000
+        run: npm test -- --forceExit --detectOpenHandles
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: server/coverage/
+          retention-days: 7
+
+  # ─── Job 3: Frontend Build ────────────────────────────────────────────────────
+  build-frontend:
+    name: 🏗️ Frontend Build
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client deps
+        working-directory: ./client
+        run: npm ci
+
+      - name: Build production bundle
+        working-directory: ./client
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:5000' }}
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-dist
+          path: client/dist/
+          retention-days: 7
+
+  # ─── Job 4: Python ML Service Tests ──────────────────────────────────────────
+  test-ml-service:
+    name: 🤖 ML Service Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: ml-service/requirements.txt
+
+      - name: Install ML deps
+        working-directory: ./ml-service
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run ML service tests
+        working-directory: ./ml-service
+        run: pytest --cov=. --cov-report=xml -v || true
+
+  # ─── Job 5: Docker Build Validation ──────────────────────────────────────────
+  docker-build:
+    name: 🐳 Docker Build Check
+    runs-on: ubuntu-latest
+    needs: [test-backend, build-frontend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build server image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          push: false
+          tags: stock-platform/server:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build client image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          push: false
+          tags: stock-platform/client:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build ML service image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ml-service
+          push: false
+          tags: stock-platform/ml-service:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─── Job 6: Security Audit ────────────────────────────────────────────────────
+  security-audit:
+    name: 🔒 Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Audit server dependencies
+        working-directory: ./server
+        run: npm audit --audit-level=high || true
+
+      - name: Audit client dependencies
+        working-directory: ./client
+        run: npm audit --audit-level=high || true

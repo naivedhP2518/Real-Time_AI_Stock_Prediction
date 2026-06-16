@@ -15,8 +15,12 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+// Removed AmCandleChart import
 import { AuthContext } from '../context/AuthContext';
 import API from '../services/api';
+
+
+
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
@@ -193,23 +197,7 @@ const Dashboard = () => {
     ? stocks.filter((s) => watchlistSymbols.includes(s.symbol))
     : stocks;
 
-  if (loading && stocks.length === 0) {
-    return (
-      <div className="p-8 space-y-6 animate-pulse">
-        <div className="h-8 bg-slate-200/50 dark:bg-white/5 rounded w-1/4"></div>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-4 space-y-4">
-            <div className="h-20 bg-slate-200/50 dark:bg-white/5 rounded-xl"></div>
-            <div className="h-20 bg-slate-200/50 dark:bg-white/5 rounded-xl"></div>
-            <div className="h-20 bg-slate-200/50 dark:bg-white/5 rounded-xl"></div>
-          </div>
-          <div className="lg:col-span-8 h-96 bg-slate-200/50 dark:bg-white/5 rounded-2xl"></div>
-        </div>
-      </div>
-    );
-  }
-
-  // Pre-process recharts historical arrays
+  // Pre-process recharts historical arrays (safe defaults when loading)
   const isSelectedStockUp = (selectedStock?.change || 0) >= 0;
   const selectedHistory = selectedStock?.history || Array.from({ length: 15 }, (_, i) => {
     const base = selectedStock?.price || 250;
@@ -229,37 +217,35 @@ const Dashboard = () => {
     const prevVal = idx > 0 ? zoomedHistory[idx - 1] : val * (isDashboardStockUp ? 0.99 : 1.01);
     const open = prevVal;
     const close = val;
-    // Generate high/low that bounds open/close realistically
     const high = Math.max(open, close) + Math.max(0.1, ((Math.sin(idx * 0.5) + 1) * 0.4) + Math.random() * 0.3);
     const low = Math.min(open, close) - Math.max(0.1, ((Math.cos(idx * 0.5) + 1) * 0.4) + Math.random() * 0.3);
     const isUp = close >= open;
-
-    // Calculate a 5-period simple moving average (SMA)
-    let sum = 0;
-    let count = 0;
-    for (let i = Math.max(0, idx - 4); i <= idx; i++) {
-      sum += zoomedHistory[i];
-      count++;
-    }
+    let sum = 0, count = 0;
+    for (let i = Math.max(0, idx - 4); i <= idx; i++) { sum += zoomedHistory[i]; count++; }
     const ma = +(sum / count).toFixed(2);
-
-    // Mock volume proportional to the price volatility
     const volume = Math.round(150 + Math.abs(high - low) * 200 + Math.random() * 100);
-
-    return {
-      time: `T-${zoomedHistory.length - 1 - idx}`,
-      open,
-      close,
-      high,
-      low,
-      price: val,
-      ma,
-      volume,
-      isUp
-    };
+    return { time: `T-${zoomedHistory.length - 1 - idx}`, open, close, high, low, price: val, ma, volume, isUp };
   });
 
   const chartColor = (selectedStock?.change || 0) >= 0 ? '#10B981' : '#EF4444';
+
+  // ---- Early loading skeleton (AFTER all hooks) ----
+  if (loading && stocks.length === 0) {
+    return (
+      <div className="p-8 space-y-6 animate-pulse">
+        <div className="h-8 bg-slate-200/50 dark:bg-white/5 rounded w-1/4"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-4 space-y-4">
+            <div className="h-20 bg-slate-200/50 dark:bg-white/5 rounded-xl"></div>
+            <div className="h-20 bg-slate-200/50 dark:bg-white/5 rounded-xl"></div>
+            <div className="h-20 bg-slate-200/50 dark:bg-white/5 rounded-xl"></div>
+          </div>
+          <div className="lg:col-span-8 h-96 bg-slate-200/50 dark:bg-white/5 rounded-2xl"></div>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-colors duration-300">
@@ -513,7 +499,7 @@ const Dashboard = () => {
 
               {/* Chart Controls Area */}
               <div className="flex flex-wrap items-center justify-between gap-4 mb-4 border-b border-slate-200/50 dark:border-white/5 pb-3">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1.5">
                   <button
                     onClick={() => setChartType('area')}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
@@ -576,82 +562,81 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Recharts Premium Graph Implementation */}
-              <div className="w-full bg-slate-100 dark:bg-black/35 border border-slate-200 dark:border-white/5 rounded-xl p-4 h-64 transition-all overflow-hidden relative">
-                <ResponsiveContainer width="100%" height="100%">
-                  {chartType === 'area' ? (
-                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="primaryChartGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={chartColor} stopOpacity={0.3} />
-                          <stop offset="100%" stopColor={chartColor} stopOpacity={0.0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.07} />
-                      <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#64748b' }} />
-                      <YAxis
-                        domain={['auto', 'auto']}
-                        tick={{ fontSize: 9, fill: '#64748b' }}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'rgba(21, 29, 48, 0.9)',
-                          border: '1px solid rgba(255, 255, 255, 0.05)',
-                          borderRadius: '12px',
-                          color: '#fff',
-                          fontSize: '11px'
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="price"
-                        stroke={chartColor}
-                        strokeWidth={3}
-                        fillOpacity={1}
-                        fill="url(#primaryChartGradient)"
-                      />
-                    </AreaChart>
-                  ) : chartType === 'line' ? (
-                    <LineChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.07} />
-                      <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#64748b' }} />
-                      <YAxis domain={['auto', 'auto']} tick={{ fontSize: 9, fill: '#64748b' }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'rgba(21, 29, 48, 0.9)',
-                          border: '1px solid rgba(255, 255, 255, 0.05)',
-                          borderRadius: '12px',
-                          color: '#fff',
-                          fontSize: '11px'
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="price"
-                        stroke={chartColor}
-                        strokeWidth={3}
-                        dot={{ r: 4, stroke: chartColor, strokeWidth: 1 }}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  ) : (
-                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.07} />
-                      <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#64748b' }} />
-                      <YAxis domain={['auto', 'auto']} tick={{ fontSize: 9, fill: '#64748b' }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'rgba(21, 29, 48, 0.9)',
-                          border: '1px solid rgba(255, 255, 255, 0.05)',
-                          borderRadius: '12px',
-                          color: '#fff',
-                          fontSize: '11px'
-                        }}
-                      />
-                      <Bar dataKey="price" fill={chartColor} radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  )}
-                </ResponsiveContainer>
+              {/* Chart Render Block */}
+              <div className="w-full bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-xl overflow-hidden relative" style={{ height: '420px' }}>
+                <div className="p-4 h-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    {chartType === 'area' ? (
+                      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="primaryChartGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={chartColor} stopOpacity={0.3} />
+                            <stop offset="100%" stopColor={chartColor} stopOpacity={0.0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.07} />
+                        <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#64748b' }} />
+                        <YAxis domain={['auto', 'auto']} tick={{ fontSize: 9, fill: '#64748b' }} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'rgba(21, 29, 48, 0.9)',
+                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                            borderRadius: '12px',
+                            color: '#fff',
+                            fontSize: '11px'
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="price"
+                          stroke={chartColor}
+                          strokeWidth={3}
+                          fillOpacity={1}
+                          fill="url(#primaryChartGradient)"
+                        />
+                      </AreaChart>
+                    ) : chartType === 'line' ? (
+                      <LineChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.07} />
+                        <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#64748b' }} />
+                        <YAxis domain={['auto', 'auto']} tick={{ fontSize: 9, fill: '#64748b' }} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'rgba(21, 29, 48, 0.9)',
+                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                            borderRadius: '12px',
+                            color: '#fff',
+                            fontSize: '11px'
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="price"
+                          stroke={chartColor}
+                          strokeWidth={3}
+                          dot={{ r: 4, stroke: chartColor, strokeWidth: 1 }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    ) : (
+                      <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.07} />
+                        <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#64748b' }} />
+                        <YAxis domain={['auto', 'auto']} tick={{ fontSize: 9, fill: '#64748b' }} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'rgba(21, 29, 48, 0.9)',
+                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                            borderRadius: '12px',
+                            color: '#fff',
+                            fontSize: '11px'
+                          }}
+                        />
+                        <Bar dataKey="price" fill={chartColor} radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    )}
+                  </ResponsiveContainer>
+                  </div>
               </div>
 
               {/* Extra specifications under chart */}

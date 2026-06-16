@@ -28,13 +28,12 @@ def fetch_stock_history(symbol, period="2y", interval="1d"):
 
 def calculate_technical_indicators(df):
     """
-    Calculate RSI, SMA, and MACD technical indicators.
+    Calculate RSI, SMA, MACD, Bollinger Bands, EMA, VWAP, and ATR technical indicators.
     """
     df = df.copy()
     
     # 1. Simple Moving Average (SMA 20)
     df['sma_20'] = df['close'].rolling(window=20).mean()
-    # Fallback for NaN values at start
     df['sma_20'] = df['sma_20'].bfill()
     
     # 2. Relative Strength Index (RSI 14)
@@ -45,13 +44,11 @@ def calculate_technical_indicators(df):
     avg_gain = gain.rolling(window=14).mean()
     avg_loss = loss.rolling(window=14).mean()
     
-    # Smooth them using simple exponential decay
     avg_gain = avg_gain.fillna(0)
     avg_loss = avg_loss.fillna(0)
     
     rs = avg_gain / np.where(avg_loss == 0, 1e-9, avg_loss)
     df['rsi'] = 100 - (100 / (1 + rs))
-    # Replace initial NaNs with neutral 50
     df['rsi'] = df['rsi'].fillna(50)
     
     # 3. MACD (EMA 12, EMA 26, Signal 9)
@@ -67,13 +64,26 @@ def calculate_technical_indicators(df):
     bb_std = df['close'].rolling(window=20).std()
     df['bb_upper'] = df['sma_20'] + (2 * bb_std)
     df['bb_lower'] = df['sma_20'] - (2 * bb_std)
-    # Fill starting NaNs
     df['bb_upper'] = df['bb_upper'].bfill()
     df['bb_lower'] = df['bb_lower'].bfill()
     
     # 5. EMA overlays (12, 26)
     df['ema_12'] = ema_12
     df['ema_26'] = ema_26
+
+    # 6. VWAP (Rolling 20-day Volume Weighted Average Price)
+    typical_price = (df['high'] + df['low'] + df['close']) / 3.0
+    vol_sum = df['volume'].rolling(window=20).sum()
+    df['vwap'] = (typical_price * df['volume']).rolling(window=20).sum() / np.where(vol_sum == 0, 1e-9, vol_sum)
+    df['vwap'] = df['vwap'].fillna(df['close']).bfill()
+
+    # 7. ATR (Average True Range 14-day)
+    high_low = df['high'] - df['low']
+    high_pc = (df['high'] - df['close'].shift(1)).abs()
+    low_pc = (df['low'] - df['close'].shift(1)).abs()
+    tr = pd.concat([high_low, high_pc, low_pc], axis=1).max(axis=1)
+    df['atr'] = tr.rolling(window=14).mean()
+    df['atr'] = df['atr'].fillna(0.0).bfill()
     
     return df
 

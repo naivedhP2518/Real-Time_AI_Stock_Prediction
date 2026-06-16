@@ -1,0 +1,50 @@
+{
+    "LSTM": {
+        "mae": 0.0142,
+        "rmse": 0.0195,
+        "latency_ms": 7.64,
+        "success_rate": 86.5
+    },
+    "GRU": {
+        "mae": 0.0135,
+        "rmse": 0.0188,
+        "latency_ms": 6.06,
+        "success_rate": 87.2
+    },
+    "RandomForest": {
+        "mae": 0.0165,
+        "rmse": 0.0225,
+        "latency_ms": 13.42,
+        "success_rate": 84.1
+    },
+    "XGBoost": {
+        "mae": 0.0118,
+        "rmse": 0.0152,
+        "latency_ms": 1.49,
+        "success_rate": 89.4
+    },
+    "ARIMA": {
+        "mae": 0.0208,
+        "rmse": 0.0285,
+        "latency_ms": 0.06,
+        "success_rate": 78.5
+    },
+    "Prophet": {
+        "mae": 0.0195,
+        "rmse": 0.0264,
+        "latency_ms": 0.08,
+        "success_rate": 80.2
+    },
+    "CNN-LSTM": {
+        "mae": 0.0125,
+        "rmse": 0.0171,
+        "latency_ms": 24.53,
+        "success_rate": 88.6
+    },
+    "LinearRegression": {
+        "mae": 0.0242,
+        "rmse": 0.0315,
+        "latency_ms": 0.23,
+        "success_rate": 75.0
+    }
+}

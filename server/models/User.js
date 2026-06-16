@@ -53,6 +53,11 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// ─── Database Indexes (performance optimization) ────────────────────────────
+// Email is already unique: indexed. Adding compound for admin panel queries.
+userSchema.index({ isAdmin: 1, createdAt: -1 }); // Admin dashboard: list users by date
+userSchema.index({ email: 1, isAdmin: 1 });        // Admin permission checks
+
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;

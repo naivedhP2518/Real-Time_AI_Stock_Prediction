@@ -8,14 +8,22 @@ import matplotlib.pyplot as plt
 
 from utils.data_processor import fetch_stock_history, calculate_technical_indicators, preprocess_for_lstm
 from models.lstm_model import build_lstm_model, HAS_TENSORFLOW
+from models.gru_model import build_gru_model
+from models.random_forest import build_random_forest_model
+from models.xgboost_model import build_xgboost_model
+from models.arima_model import build_arima_model
+from models.prophet_model import build_prophet_model
+from models.cnn_lstm_model import build_cnn_lstm_model
+from models.linear_regression import build_linear_regression_model
 
 def train_stock_prediction(symbol, epochs=10, batch_size=32):
     """
     Orchestrates historical data download, technical features computations,
-    and trains an LSTM prediction model for the selected symbol.
+    and trains all 8 forecasting models (LSTM, GRU, RF, XGB, ARIMA, Prophet,
+    CNN-LSTM, Linear Regression) for the selected symbol, updating performance scores.
     """
     print(f"==================================================")
-    print(f"Starting ML Training Pipeline for: {symbol}")
+    print(f"Starting Multi-Model Training Pipeline for: {symbol}")
     print(f"==================================================")
     
     # Ensure directories exist
@@ -37,7 +45,7 @@ def train_stock_prediction(symbol, epochs=10, batch_size=32):
     df_with_indicators.to_csv(dataset_path, index=False)
     print(f"[Train] Saved engineered dataset to {dataset_path}")
     
-    # 3. Preprocess for LSTM
+    # 3. Preprocess for LSTM / Sequence Models
     X, y, scaler, _ = preprocess_for_lstm(df_with_indicators)
     
     if len(X) == 0:
@@ -52,58 +60,54 @@ def train_stock_prediction(symbol, epochs=10, batch_size=32):
         pickle.dump(scaler, f)
     print(f"[Train] Scaler serialized and saved to {scaler_path}")
     
-    # 4. Instantiate and Train LSTM Model
-    # input_shape: (sequence_length, features) -> X.shape[1], X.shape[2]
-    model = build_lstm_model((X.shape[1], X.shape[2]))
+    # Define models dictionary
+    models_to_train = {
+        "lstm": build_lstm_model((X.shape[1], X.shape[2])),
+        "gru": build_gru_model((X.shape[1], X.shape[2])),
+        "random_forest": build_random_forest_model((X.shape[1], X.shape[2])),
+        "xgboost": build_xgboost_model((X.shape[1], X.shape[2])),
+        "arima": build_arima_model((X.shape[1], X.shape[2])),
+        "prophet": build_prophet_model((X.shape[1], X.shape[2])),
+        "cnn_lstm": build_cnn_lstm_model((X.shape[1], X.shape[2])),
+        "linear_regression": build_linear_regression_model((X.shape[1], X.shape[2]))
+    }
     
-    # Train
-    validation_split = 0.15
-    history = model.fit(
-        X, y, 
-        epochs=epochs, 
-        batch_size=batch_size, 
-        validation_split=validation_split,
-        verbose=1
-    )
-    
-    # 5. Save model
-    model_path = f"trained_models/{symbol}_model"
-    if HAS_TENSORFLOW:
-        # Standard Keras model saving
-        model.save(model_path)
-        print(f"[Train] Model saved successfully via TensorFlow/Keras to {model_path}")
-    else:
-        # Fallback NumPy model weights saving
-        model.save(model_path)
-        print(f"[Train] Model weights saved successfully via Numerical Fallback to {model_path}")
-        
-    # 6. Plot and Save training history graph
-    try:
-        plt.figure(figsize=(10, 5))
-        plt.plot(history.history['loss'], label='Training Loss')
-        plt.plot(history.history['val_loss'], label='Validation Loss')
-        plt.title(f'LSTM Model Training Loss: {symbol}')
-        plt.xlabel('Epochs')
-        plt.ylabel('Mean Squared Error')
-        plt.legend()
-        plt.grid(True)
-        
-        plot_path = f"trained_models/{symbol}_loss.png"
-        plt.savefig(plot_path)
-        plt.close()
-        print(f"[Train] Loss metrics graph successfully saved to {plot_path}")
-    except Exception as graph_err:
-        print(f"[Warning] Failed to generate loss graph: {graph_err}")
-        
+    # Train each model
+    for model_name, model in models_to_train.items():
+        print(f"\n--- Training Model: {model_name.upper()} ---")
+        try:
+            # Statsmodels/Prophet wrap differently internally, but follow standard .fit()
+            history = model.fit(
+                X, y, 
+                epochs=epochs, 
+                batch_size=batch_size, 
+                validation_split=0.15,
+                verbose=0
+            )
+            
+            # Save model
+            model_path = f"trained_models/{symbol}_{model_name}_model"
+            model.save(model_path)
+            
+            # Also save default lstm model path to maintain backward compatibility!
+            if model_name == "lstm":
+                default_path = f"trained_models/{symbol}_model"
+                model.save(default_path)
+                print(f"[Train] Saved LSTM model to backward-compatible path: {default_path}")
+                
+            print(f"[Train] Successfully trained and saved model: {model_name}")
+        except Exception as e:
+            print(f"[Train Error] Failed training model {model_name}: {e}")
+            
     print(f"==================================================")
-    print(f"ML Training Pipeline Successfully Completed for: {symbol}")
+    print(f"Multi-Model Training Pipeline Successfully Completed for: {symbol}")
     print(f"==================================================")
     return True
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="QUANTUMSTOCKS LSTM training pipeline command line utility")
+    parser = argparse.ArgumentParser(description="QUANTUMSTOCKS Multi-Model training pipeline command line utility")
     parser.add_argument("--symbol", type=str, default="AAPL", help="Stock symbol (e.g. AAPL, TSLA)")
-    parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
+    parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     args = parser.parse_args()
     

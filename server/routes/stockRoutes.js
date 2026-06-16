@@ -9,7 +9,13 @@ const {
   addToWatchlist,
   removeFromWatchlist
 } = require('../controllers/stockController');
-const { getStockPrediction } = require('../controllers/predictionController');
+const { 
+  getStockPrediction,
+  getAvailableModelsList,
+  getModelsPerformanceMetrics,
+  getSpecificModelPrediction,
+  getEnsemblePredictionConsensus
+} = require('../controllers/predictionController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Secure stock routes (all endpoints protected by protect middleware)
@@ -21,6 +27,14 @@ router.get('/search/:query', searchStocks);
 router.get('/watchlist/details', getUserWatchlist);
 router.post('/watchlist', addToWatchlist);
 router.delete('/watchlist/:symbol', removeFromWatchlist);
+
+// Multi-Model Forecasting Endpoints
+router.get('/models', getAvailableModelsList);
+router.get('/model-performance', getModelsPerformanceMetrics);
+router.post('/predict/:model', getSpecificModelPrediction);
+router.post('/ensemble-predict', getEnsemblePredictionConsensus);
+
+// Legacy Prediction route
 router.get('/predictions/:symbol', getStockPrediction);
 router.get('/:symbol', getStock);
 
