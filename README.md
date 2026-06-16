@@ -2,14 +2,22 @@
 
 <div align="center">
 
-![Platform Banner](https://img.shields.io/badge/QUANTUMSTOCKS-AI%20Stock%20Platform-blue?style=for-the-badge&logo=chart-line)
-![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?style=flat-square&logo=node.js)
-![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
-![TensorFlow](https://img.shields.io/badge/TensorFlow-LSTM-FF6F00?style=flat-square&logo=tensorflow)
-![MongoDB](https://img.shields.io/badge/MongoDB-7.0-47A248?style=flat-square&logo=mongodb)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker)
-![License](https://img.shields.io/badge/License-ISC-green?style=flat-square)
+<h1 align="center">📈 QuantumStocks</h1>
+
+<p align="center">
+  AI-Powered Stock Market Analysis & Prediction Platform
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-20.x-339933?style=for-the-badge&logo=node.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/TensorFlow-LSTM-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" />
+  <img src="https://img.shields.io/badge/MongoDB-7.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white" />
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+</p>
+
+
 
 **A full-stack, production-grade financial intelligence platform powered by LSTM deep learning, real-time WebSockets, and a React AI dashboard.**
 
